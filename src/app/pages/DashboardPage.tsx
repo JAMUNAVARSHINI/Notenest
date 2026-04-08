@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { FileText, Edit, Trash2, Plus } from "lucide-react";
-import { Link } from "react-router";
+import { useState, useEffect } from "react";
+import { FileText, Edit, Trash2, Plus, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router";
 import { Button } from "../components/Button";
 
 const MOCK_USER_NOTES = [
@@ -29,6 +29,22 @@ const MOCK_USER_NOTES = [
 
 export function DashboardPage() {
   const [notes, setNotes] = useState(MOCK_USER_NOTES);
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, [navigate]);
 
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this note?")) {
@@ -36,13 +52,21 @@ export function DashboardPage() {
     }
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">My Dashboard</h1>
-            <p className="text-muted-foreground">Manage your uploaded notes</p>
+            <h1 className="text-3xl font-bold mb-2">Welcome, {user.name}</h1>
+            <p className="text-muted-foreground">Manage your uploaded notes and profile</p>
           </div>
           <Link to="/upload">
             <Button variant="primary">
