@@ -4,8 +4,8 @@ const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
 
-// Load environment variables from the root .env file
-dotenv.config({ path: path.join(__dirname, '../.env') });
+// Load environment variables
+dotenv.config();
 
 // Connect to MongoDB
 connectDB();
@@ -13,7 +13,14 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors()); // Enable Cross-Origin Resource Sharing
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    process.env.FRONTEND_URL || 'https://notenest-rosy.vercel.app',
+  ],
+  credentials: true,
+}));
 app.use(express.json()); // Allow parsing JSON from request bodies
 
 // API routes
