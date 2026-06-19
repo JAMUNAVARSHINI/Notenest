@@ -1,8 +1,19 @@
-import { Link, useLocation } from "react-router";
-import { BookOpen, Upload, Home, LogIn, LayoutDashboard } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router";
+import { BookOpen, Upload, Home, LogIn, LogOut, LayoutDashboard } from "lucide-react";
 
 export function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const token = localStorage.getItem("token");
+  const storedUser = localStorage.getItem("user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/");
+  };
 
   const isActive = (path: string) => {
     if (path === "/" && location.pathname === "/") return true;
@@ -64,13 +75,28 @@ export function Navbar() {
             </Link>
           </div>
 
-          <Link
-            to="/login"
-            className="px-5 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
-          >
-            <LogIn className="w-4 h-4" />
-            <span>Login</span>
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-muted-foreground hidden sm:inline">
+                {user.name || user.email}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-secondary text-foreground border border-border rounded-lg hover:bg-secondary/80 transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="px-5 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Login</span>
+            </Link>
+          )}
         </div>
 
         <div className="md:hidden flex gap-2 pb-3">

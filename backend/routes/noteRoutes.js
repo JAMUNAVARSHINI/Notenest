@@ -7,6 +7,7 @@ const {
   incrementDownload,
   deleteNote,
   editNote,
+  getNoteById,
 } = require('../controllers/noteController');
 
 // Upload a new note
@@ -17,6 +18,9 @@ router.get('/user/:email', getUserNotes);
 
 // Fetch all notes
 router.get('/', getAllNotes);
+
+// Fetch single note by ID
+router.get('/:id', getNoteById);
 
 // Increment download count
 router.put('/download/:id', incrementDownload);

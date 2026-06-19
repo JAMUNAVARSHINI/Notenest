@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Search, Filter } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Filter, Loader2 } from "lucide-react";
 import { NoteCard } from "../components/NoteCard";
 
 const MOCK_NOTES = [
@@ -62,13 +62,61 @@ const SUBJECTS = [
   "Biology",
   "Engineering",
   "Economics",
+  "Social Science",
 ];
 
 export function NotesListingPage() {
+  const [notes, setNotes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("All Subjects");
 
-  const filteredNotes = MOCK_NOTES.filter((note) => {
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notes`);
+        const data = await response.json();
+        if (response.ok) {
+          const mappedNotes = data.map((note: any) => ({
+            id: note._id,
+            title: note.title,
+            subject: note.subject,
+            description: note.description || "No description provided.",
+            uploadDate: new Date(note.uploadDate).toLocaleDateString(),
+            uploader: note.userEmail.split('@')[0],
+          }));
+
+          const MOCK_NOTES = [
+            {
+              id: "1",
+              title: "Introduction to Data Structures",
+              subject: "Computer Science",
+              description: "Comprehensive notes covering arrays, linked lists, stacks, queues, and their implementations with examples.",
+              uploadDate: "March 15, 2026",
+              uploader: "Sarah Johnson",
+            },
+            {
+              id: "2",
+              title: "Calculus I - Derivatives and Integrals",
+              subject: "Mathematics",
+              description: "Complete study guide for Calculus I including differentiation rules, integration techniques, and solved problems.",
+              uploadDate: "March 10, 2026",
+              uploader: "Michael Chen",
+            },
+          ];
+
+          setNotes([...mappedNotes, ...MOCK_NOTES]);
+        }
+      } catch (error) {
+        console.error("Error fetching notes:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchNotes();
+  }, []);
+
+  const filteredNotes = notes.filter((note) => {
     const matchesSearch =
       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       note.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -122,7 +170,11 @@ export function NotesListingPage() {
         </div>
 
         <div className="space-y-4">
-          {filteredNotes.length > 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 bg-white rounded-xl border border-border">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : filteredNotes.length > 0 ? (
             filteredNotes.map((note) => <NoteCard key={note.id} {...note} />)
           ) : (
             <div className="text-center py-12 bg-white rounded-xl border border-border">

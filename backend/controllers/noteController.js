@@ -5,7 +5,7 @@ const Note = require('../models/Note');
 // @access  Public (or Protected if needed)
 const uploadNote = async (req, res) => {
   try {
-    const { title, subject, userEmail } = req.body;
+    const { title, subject, userEmail, description } = req.body;
 
     if (!title || !subject || !userEmail) {
       return res.status(400).json({ message: 'Please provide title, subject, and userEmail' });
@@ -15,6 +15,7 @@ const uploadNote = async (req, res) => {
       title,
       subject,
       userEmail,
+      description,
     });
 
     res.status(201).json(note);
@@ -107,6 +108,23 @@ const editNote = async (req, res) => {
   }
 };
 
+// @desc    Get a single note by ID
+// @route   GET /api/notes/:id
+// @access  Public
+const getNoteById = async (req, res) => {
+  try {
+    const note = await Note.findById(req.params.id);
+
+    if (!note) {
+      return res.status(404).json({ message: 'Note not found' });
+    }
+
+    res.status(200).json(note);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 module.exports = {
   uploadNote,
   getUserNotes,
@@ -114,4 +132,5 @@ module.exports = {
   incrementDownload,
   deleteNote,
   editNote,
+  getNoteById,
 };

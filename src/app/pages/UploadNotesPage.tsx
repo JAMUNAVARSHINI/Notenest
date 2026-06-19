@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Upload, FileText, ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Upload, FileText, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "../components/Button";
 import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 const SUBJECTS = [
   "Computer Science",
@@ -14,10 +15,12 @@ const SUBJECTS = [
   "History",
   "Literature",
   "Business",
+  "Social Science",
 ];
 
 export function UploadNotesPage() {
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     title: "",
     subject: "Computer Science",
@@ -25,6 +28,21 @@ export function UploadNotesPage() {
     file: null as File | null,
   });
   const [fileName, setFileName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, [navigate]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,9 +52,49 @@ export function UploadNotesPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    if (!user) {
+      toast.error("Auth Error", {
+        description: "You must be logged in to upload notes.",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notes/upload`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          subject: formData.subject,
+          description: formData.description,
+          userEmail: user.email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to upload note");
+      }
+
+      toast.success("Note Uploaded!", {
+        description: "Your note has been successfully stored in the database.",
+      });
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast.error("Upload Error", {
+        description: error.message || "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -119,7 +177,6 @@ export function UploadNotesPage() {
                   accept=".pdf"
                   className="hidden"
                   onChange={handleFileChange}
-                  required
                 />
                 <label
                   htmlFor="file-upload"
@@ -145,12 +202,21 @@ export function UploadNotesPage() {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button type="submit" variant="primary" className="flex-1">
-                <Upload className="w-5 h-5" />
-                Upload Notes
+              <Button type="submit" variant="primary" className="flex-1" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5" />
+                    Upload Notes
+                  </>
+                )}
               </Button>
               <Link to="/notes" className="flex-1">
-                <Button type="button" variant="secondary" className="w-full">
+                <Button type="button" variant="secondary" className="w-full" disabled={isLoading}>
                   Cancel
                 </Button>
               </Link>

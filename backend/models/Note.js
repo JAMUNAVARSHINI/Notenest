@@ -25,6 +25,10 @@ const noteSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please add an email'],
   },
+  description: {
+    type: String,
+    required: false,
+  },
 }, {
   timestamps: true,
 });

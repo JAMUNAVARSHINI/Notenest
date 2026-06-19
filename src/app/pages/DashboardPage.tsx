@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FileText, Edit, Trash2, Plus, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { Button } from "../components/Button";
+import { toast } from "sonner";
 
 const MOCK_USER_NOTES = [
   {
@@ -28,9 +29,25 @@ const MOCK_USER_NOTES = [
 ];
 
 export function DashboardPage() {
-  const [notes, setNotes] = useState(MOCK_USER_NOTES);
+  const [notes, setNotes] = useState<any[]>([]);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(true);
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
+
+  const fetchUserNotes = async (email: string) => {
+    setIsLoadingNotes(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notes/user/${email}`);
+      const data = await response.json();
+      if (response.ok) {
+        setNotes(data);
+      }
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+    } finally {
+      setIsLoadingNotes(false);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -42,17 +59,38 @@ export function DashboardPage() {
     }
 
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      fetchUserNotes(parsedUser.email);
     }
   }, [navigate]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this note?")) {
-      setNotes(notes.filter((note) => note.id !== id));
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notes/${id}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          toast.success("Note Deleted", {
+            description: "Your note has been successfully deleted.",
+          });
+          setNotes(notes.filter((note) => note._id !== id));
+        } else {
+          toast.error("Delete Error", {
+            description: "Failed to delete note.",
+          });
+        }
+      } catch (error: any) {
+        toast.error("Delete Error", {
+          description: error.message || "Something went wrong.",
+        });
+      }
     }
   };
 
-  if (!user) {
+  if (!user || isLoadingNotes) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -112,7 +150,7 @@ export function DashboardPage() {
               <tbody className="divide-y divide-border">
                 {notes.length > 0 ? (
                   notes.map((note) => (
-                    <tr key={note.id} className="hover:bg-secondary/50 transition-colors">
+                    <tr key={note._id} className="hover:bg-secondary/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -126,8 +164,10 @@ export function DashboardPage() {
                           {note.subject}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground">{note.uploadDate}</td>
-                      <td className="px-6 py-4 text-muted-foreground">{note.downloads}</td>
+                      <td className="px-6 py-4 text-muted-foreground">
+                        {new Date(note.uploadDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">{note.downloads || 0}</td>
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
                           <button
@@ -139,7 +179,7 @@ export function DashboardPage() {
                           <button
                             className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
                             title="Delete"
-                            onClick={() => handleDelete(note.id)}
+                            onClick={() => handleDelete(note._id)}
                           >
                             <Trash2 className="w-5 h-5 text-muted-foreground hover:text-destructive" />
                           </button>
