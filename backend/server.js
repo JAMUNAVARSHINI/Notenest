@@ -14,6 +14,12 @@ const startServer = async () => {
 
     const app = express();
 
+    // Request logger
+    app.use((req, res, next) => {
+      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+      next();
+    });
+
     // Middleware
     app.use(cors({
       origin: [
