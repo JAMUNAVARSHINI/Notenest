@@ -30,6 +30,10 @@ export function SignupPage() {
 
     setIsLoading(true);
 
+    // Abort controller for timeout — Render free tier can take 30–60s to cold-start
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/register`, {
         method: "POST",
@@ -41,8 +45,10 @@ export function SignupPage() {
           email: formData.email,
           password: formData.password,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const data = await response.json();
 
       if (!response.ok) {
@@ -55,9 +61,21 @@ export function SignupPage() {
 
       navigate("/login");
     } catch (error: any) {
-      toast.error("Signup Error", {
-        description: error.message || "Something went wrong. Please try again.",
-      });
+      clearTimeout(timeoutId);
+      if (error.name === "AbortError") {
+        toast.warning("Server is waking up 🌅", {
+          description: "The server was sleeping (free tier). Please wait ~30 seconds and try again.",
+          duration: 6000,
+        });
+      } else if (error.message === "Failed to fetch" || error.message?.includes("network")) {
+        toast.error("Connection Error", {
+          description: "Cannot reach the server. Please check your internet and try again.",
+        });
+      } else {
+        toast.error("Signup Error", {
+          description: error.message || "Something went wrong. Please try again.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
