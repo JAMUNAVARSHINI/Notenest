@@ -5,12 +5,3 @@ services:
     rootDir: backend
     buildCommand: npm install --production
     startCommand: node server.js
-    envVars:
-      - key: MONGO_URI
-        value: mongodb+srv://JAMUNAVARSHINI:jamuna124@cluster0.t9shunx.mongodb.net/notenest?retryWrites=true&w=majority&appName=Cluster0
-      - key: JWT_SECRET
-        value: NoteNest_Super_Secret_JWT_Key_2024_XYZ!@#
-      - key: FRONTEND_URL
-        value: https://notenest-rosy.vercel.app
-      - key: NODE_ENV
-        value: production
