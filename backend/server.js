@@ -5,7 +5,7 @@ const path = require('path');
 const connectDB = require('./config/db');
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const startServer = async () => {
   try {
@@ -51,6 +51,11 @@ const startServer = async () => {
     // Basic route to check if server is running
     app.get('/', (req, res) => {
       res.send('API is running...');
+    });
+
+    // Health check route — used by UptimeRobot to keep server awake
+    app.get('/health', (req, res) => {
+      res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
     });
 
     // Set the port
